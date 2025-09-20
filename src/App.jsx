@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import hljs from 'highlight.js';
-import 'highlight.js/styles/vs2015.css';
+import 'highlight.js/styles/atom-one-dark.css'; // Modern, interview-ready theme
 import { saveAs } from 'file-saver';
 
 function App() {
@@ -31,7 +31,7 @@ function App() {
 
       try {
         const response = await axios.post(
-          'https://recursive-ai-executor-backend.onrender.com/execute', // Deployed backend URL
+          'https://recursive-ai-executor-backend.onrender.com/execute',
           { prompt }
         );
 
@@ -111,7 +111,7 @@ function App() {
 
       <div className="mt-6 w-[700px]">
         <h2 className="text-xl font-semibold mb-2">Generated Code (Read-Only)</h2>
-        <pre className="bg-gray-900 text-green-400 p-4 rounded-md text-left text-sm font-mono w-full whitespace-pre-wrap overflow-x-auto shadow-lg">
+        <pre className="bg-gray-900 p-4 rounded-md text-left text-sm font-mono w-full whitespace-pre-wrap overflow-x-auto shadow-lg">
           <code ref={codeRef} className="language-python">
             {code}
           </code>
