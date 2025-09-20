@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/vs2015.css';
+import { saveAs } from 'file-saver';
 
 function App() {
   const [prompt, setPrompt] = useState('');
@@ -16,6 +17,7 @@ function App() {
       alert('Please enter a prompt!');
       return;
     }
+
     setLoading(true);
     setCode('');
     setOutput('');
@@ -24,9 +26,14 @@ function App() {
 
     while (attempts < maxRetries) {
       attempts++;
-      setRetryCount(attempts); // Update retry count
+      setRetryCount(attempts);
+
       try {
-        const response = await axios.post('https://recursive-ai-executor.onrender.com/execute', { prompt });
+        const response = await axios.post(
+          'https://recursive-ai-executor.onrender.com/execute', // Deployed backend URL
+          { prompt }
+        );
+
         setCode(response.data.final_code || '# No code generated...');
         setOutput(response.data.output || 'No terminal output available.');
         setLogs([
@@ -36,8 +43,8 @@ function App() {
             code: response.data.final_code,
             output: response.data.output,
             timestamp: new Date().toISOString(),
-            retries: attempts,
-          },
+            retries: attempts
+          }
         ]);
         break; // Exit on success
       } catch (error) {
@@ -47,11 +54,18 @@ function App() {
           setOutput('Max retries reached. Check backend logs.');
           setLogs([
             ...logs,
-            { prompt, code: '# Error', output: 'Max retries reached.', timestamp: new Date().toISOString(), retries: attempts },
+            {
+              prompt,
+              code: '# Error',
+              output: 'Max retries reached.',
+              timestamp: new Date().toISOString(),
+              retries: attempts
+            }
           ]);
         }
       }
     }
+
     setLoading(false);
   };
 
@@ -64,101 +78,52 @@ function App() {
   const exportLogs = () => {
     const data = JSON.stringify(logs, null, 2);
     const blob = new Blob([data], { type: 'application/json' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `recursive-ai-logs-${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
+    saveAs(blob, `recursive-ai-logs-${new Date().toISOString().split('T')[0]}.json`);
   };
 
   return (
     <div
-      style={{
-        minHeight: '100vh',
-        backgroundColor: '#1e1e2f', // Dark rich background
-        color: '#ffffff', // White text for readability
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: '20px',
-      }}
+      className="flex flex-col items-center justify-center min-h-screen px-4"
+      style={{ backgroundColor: '#1e1e2f', color: '#f0f0f0', fontFamily: 'Inter, sans-serif' }}
     >
-      <h1 style={{ fontSize: '3rem', fontWeight: 'bold', marginBottom: '20px' }}>Recursive AI Executor</h1>
-      <p style={{ fontSize: '1.25rem', marginBottom: '10px' }}>Enter your prompt:</p>
+      <h1 className="text-3xl font-bold mb-6">Recursive AI Executor</h1>
+      <p className="text-lg mb-2">Enter your prompt:</p>
       <textarea
         value={prompt}
         onChange={(e) => setPrompt(e.target.value)}
         placeholder="Write a function to check prime number"
-        style={{
-          width: '700px',
-          height: '120px',
-          padding: '16px',
-          borderRadius: '12px',
-          border: '1px solid #444',
-          backgroundColor: '#2a2a3f',
-          color: '#ffffff',
-          fontSize: '1.25rem',
-          marginBottom: '20px',
-          resize: 'none',
-        }}
+        className="border border-gray-600 px-4 py-2 w-[700px] mb-4 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        rows={6}
+        style={{ borderRadius: '1rem', fontSize: '1.25rem', backgroundColor: '#2b2b3c', color: '#f0f0f0' }}
       />
-      <button
-        onClick={handleGenerate}
-        disabled={loading}
-        style={{
-          backgroundColor: '#3b82f6',
-          color: '#ffffff',
-          fontSize: '1.75rem',
-          fontWeight: '600',
-          padding: '16px 40px',
-          borderRadius: '12px',
-          marginBottom: '20px',
-          cursor: loading ? 'not-allowed' : 'pointer',
-        }}
-      >
-        {loading ? 'Generating...' : 'Generate Code'}
-      </button>
-      <div style={{ width: '700px' }}>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '8px' }}>Generated Code:</h2>
-        <pre
-          style={{
-            backgroundColor: '#2a2a3f',
-            color: '#00ff90',
-            padding: '16px',
-            borderRadius: '12px',
-            fontFamily: 'monospace',
-            whiteSpace: 'pre-wrap',
-            marginBottom: '20px',
-          }}
+      <div>
+        <button
+          onClick={handleGenerate}
+          className="bg-blue-600 text-white font-semibold rounded-md shadow-md hover:bg-blue-700 transition"
+          style={{ marginTop: '18px', padding: '16px 40px', fontSize: '28px', width: '300px' }}
+          disabled={loading}
         >
+          {loading ? 'Generating...' : 'Generate Code'}
+        </button>
+      </div>
+
+      <div className="mt-6 w-[700px]">
+        <h2 className="text-xl font-semibold mb-2">Generated Code (Read-Only)</h2>
+        <pre className="bg-gray-900 text-green-400 p-4 rounded-md text-left text-sm font-mono w-full whitespace-pre-wrap shadow-lg">
           <code className="language-python">{code}</code>
         </pre>
-        <h2 style={{ fontSize: '1.5rem', fontWeight: '600', marginBottom: '8px' }}>Terminal Output</h2>
-        <pre
-          style={{
-            backgroundColor: '#1e1e2f',
-            color: '#ffffff',
-            padding: '16px',
-            borderRadius: '12px',
-            fontFamily: 'monospace',
-            whiteSpace: 'pre-wrap',
-            marginBottom: '20px',
-          }}
-        >
+
+        <h2 className="text-xl font-semibold mt-4 mb-2">Terminal Output</h2>
+        <pre className="bg-gray-800 text-white p-4 rounded-md text-left text-sm font-mono w-full whitespace-pre-wrap shadow-lg">
           {output}
         </pre>
-        <p style={{ fontSize: '1.25rem', marginBottom: '16px' }}>Retry Attempts: {retryCount}</p>
+
+        <p className="mt-2 text-lg">Retry Attempts: {retryCount}</p>
+
         <button
           onClick={exportLogs}
-          style={{
-            backgroundColor: '#10b981',
-            color: '#ffffff',
-            fontSize: '1.5rem',
-            fontWeight: '600',
-            padding: '12px 32px',
-            borderRadius: '12px',
-            cursor: 'pointer',
-          }}
+          className="bg-green-600 text-white font-semibold rounded-md shadow-md hover:bg-green-700 transition px-8 py-3"
+          style={{ fontSize: '24px' }}
         >
           Export Logs
         </button>
