@@ -1,7 +1,7 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import axios from 'axios';
 import hljs from 'highlight.js';
-import 'highlight.js/styles/atom-one-dark.css'; // Modern, interview-ready theme
+import 'highlight.js/styles/atom-one-dark.css';
 import { saveAs } from 'file-saver';
 
 function App() {
@@ -11,7 +11,6 @@ function App() {
   const [retryCount, setRetryCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState([]);
-  const codeRef = useRef(null);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -35,13 +34,16 @@ function App() {
           { prompt }
         );
 
-        setCode(response.data.final_code || '# No code generated...');
+        const rawCode = response.data.final_code || '# No code generated...';
+        const highlightedCode = hljs.highlight(rawCode, { language: 'python' }).value;
+
+        setCode(highlightedCode);
         setOutput(response.data.output || 'No terminal output available.');
         setLogs((prevLogs) => [
           ...prevLogs,
           {
             prompt,
-            code: response.data.final_code,
+            code: rawCode,
             output: response.data.output,
             timestamp: new Date().toISOString(),
             retries: attempts
@@ -51,7 +53,10 @@ function App() {
       } catch (error) {
         console.error('Error on attempt', attempts, ':', error);
         if (attempts === maxRetries) {
-          setCode('# Error connecting to backend after max retries...');
+          const errorCode = '# Error connecting to backend after max retries...';
+          const highlightedError = hljs.highlight(errorCode, { language: 'python' }).value;
+
+          setCode(highlightedError);
           setOutput('Max retries reached. Check backend logs.');
           setLogs((prevLogs) => [
             ...prevLogs,
@@ -69,13 +74,6 @@ function App() {
 
     setLoading(false);
   };
-
-  // Highlight code when it changes
-  useEffect(() => {
-    if (codeRef.current) {
-      hljs.highlightElement(codeRef.current);
-    }
-  }, [code]);
 
   const exportLogs = () => {
     const data = JSON.stringify(logs, null, 2);
@@ -111,11 +109,10 @@ function App() {
 
       <div className="mt-6 w-[700px]">
         <h2 className="text-xl font-semibold mb-2">Generated Code (Read-Only)</h2>
-        <pre className="bg-gray-900 p-4 rounded-md text-left text-sm font-mono w-full whitespace-pre-wrap overflow-x-auto shadow-lg">
-          <code ref={codeRef} className="language-python">
-            {code}
-          </code>
-        </pre>
+        <pre
+          className="bg-gray-900 p-4 rounded-md text-left text-sm font-mono w-full whitespace-pre-wrap overflow-x-auto shadow-lg"
+          dangerouslySetInnerHTML={{ __html: code }}
+        />
 
         <h2 className="text-xl font-semibold mt-4 mb-2">Terminal Output</h2>
         <pre className="bg-gray-800 text-white p-4 rounded-md text-left text-sm font-mono w-full whitespace-pre-wrap shadow-lg overflow-x-auto">
