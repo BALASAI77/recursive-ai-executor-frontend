@@ -30,7 +30,7 @@ function App() {
 
       try {
         const response = await axios.post(
-          'https://recursive-ai-executor.onrender.com/execute', // Deployed backend URL
+          'https://recursive-ai-executor-backend.onrender.com/execute', // Deployed backend URL
           { prompt }
         );
 
