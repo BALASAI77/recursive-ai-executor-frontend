@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import hljs from 'highlight.js';
 import 'highlight.js/styles/vs2015.css';
@@ -11,6 +11,7 @@ function App() {
   const [retryCount, setRetryCount] = useState(0);
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState([]);
+  const codeRef = useRef(null);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -36,8 +37,8 @@ function App() {
 
         setCode(response.data.final_code || '# No code generated...');
         setOutput(response.data.output || 'No terminal output available.');
-        setLogs([
-          ...logs,
+        setLogs((prevLogs) => [
+          ...prevLogs,
           {
             prompt,
             code: response.data.final_code,
@@ -52,8 +53,8 @@ function App() {
         if (attempts === maxRetries) {
           setCode('# Error connecting to backend after max retries...');
           setOutput('Max retries reached. Check backend logs.');
-          setLogs([
-            ...logs,
+          setLogs((prevLogs) => [
+            ...prevLogs,
             {
               prompt,
               code: '# Error',
@@ -69,9 +70,10 @@ function App() {
     setLoading(false);
   };
 
+  // Highlight code when it changes
   useEffect(() => {
-    if (code) {
-      setTimeout(() => hljs.highlightAll(), 100);
+    if (codeRef.current) {
+      hljs.highlightElement(codeRef.current);
     }
   }, [code]);
 
@@ -109,12 +111,14 @@ function App() {
 
       <div className="mt-6 w-[700px]">
         <h2 className="text-xl font-semibold mb-2">Generated Code (Read-Only)</h2>
-        <pre className="bg-gray-900 text-green-400 p-4 rounded-md text-left text-sm font-mono w-full whitespace-pre-wrap shadow-lg">
-          <code className="language-python">{code}</code>
+        <pre className="bg-gray-900 text-green-400 p-4 rounded-md text-left text-sm font-mono w-full whitespace-pre-wrap overflow-x-auto shadow-lg">
+          <code ref={codeRef} className="language-python">
+            {code}
+          </code>
         </pre>
 
         <h2 className="text-xl font-semibold mt-4 mb-2">Terminal Output</h2>
-        <pre className="bg-gray-800 text-white p-4 rounded-md text-left text-sm font-mono w-full whitespace-pre-wrap shadow-lg">
+        <pre className="bg-gray-800 text-white p-4 rounded-md text-left text-sm font-mono w-full whitespace-pre-wrap shadow-lg overflow-x-auto">
           {output}
         </pre>
 
